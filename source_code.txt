@@ -1,0 +1,300 @@
+#include <xc.h>
+#include "config.h" 
+#define _XTAL_FREQ 4000000
+
+#define LCD_EN_Delay 500
+#define LCD_DATA_PORT_D TRISC
+#define LCD_RS_D TRISC5
+#define LCD_EN_D TRISC4
+#define RS RC5
+#define EN RC4
+#define D4 RC0
+#define D5 RC1
+#define D6 RC2
+#define D7 RC3
+//-----[ Prototypes For All Functions ]-----
+void LCD_Init();
+void LCD_Clear();
+void LCD_SL();
+void LCD_SR();
+void LCD_CMD(unsigned char);
+void LCD_DATA(unsigned char);
+void LCD_Set_Cursor(unsigned char, unsigned char);
+void LCD_Write_Char(char);
+void LCD_Write_String(char*);
+// Create The Global Counter
+unsigned char c=0;
+unsigned char class=0;
+unsigned char end=0;
+void main(void) {
+    // Set RB To Be Output Pin (LED) , pin (bell)
+    TRISB=0;
+    // Set The Initial State Of RB0, RB1 To Be OFF
+    RB0=0;
+    RB1=0;
+    //---[Enable TMR1 Interrupt]---
+    TMR1IE=1;
+    PEIE=1;
+    GIE=1;
+    //---[Configure Timer Module To Operate in Timer Mode]---
+
+    // Clear The TMR1 Register, to start counting from 0
+    TMR1=15536;
+    // Select The Local Clock as TMR1 Clock Source
+    TMR1CS=0;
+    // Set The Pre-scaler To 1:1
+    T1CKPS0=0;
+    T1CKPS1=0;
+    // Turn ON TMR1 Module !
+    TMR1ON=1;
+    // Write The System's Main Routine
+    
+  LCD_Init();
+  LCD_Clear();
+  LCD_Set_Cursor(1,1);
+  LCD_Write_String("Welcome to");
+  LCD_Set_Cursor(2,1);
+  LCD_Write_String("School");
+ 
+  __delay_ms(1000);
+   LCD_Init();
+   LCD_Clear();
+   LCD_Set_Cursor(1,1);
+   LCD_Write_String("lecture");
+   LCD_Set_Cursor(2,1);
+   LCD_Write_String("1");
+  
+  
+  
+  
+  
+    while(1)
+    {
+        
+        if (end == 0)
+        { 
+            RB1=1;
+            __delay_ms(1000);
+            RB1=0;
+            end++;
+        }
+        if (class == 0)
+        {   
+         LCD_Init();
+         LCD_Clear();
+         LCD_Set_Cursor(1,1);
+         LCD_Write_String("lecture");
+         LCD_Set_Cursor(2,1);
+         LCD_Write_Char("2");
+         __delay_ms(10000);
+        }else if (class==1)
+        {
+            LCD_Init();
+         LCD_Clear();
+         LCD_Set_Cursor(1,1);
+         LCD_Write_String("lecture");
+         LCD_Set_Cursor(2,1);
+         LCD_Write_String("3");
+         __delay_ms(10000);
+        }else if (class==2)
+        {
+            LCD_Init();
+         LCD_Clear();
+         LCD_Set_Cursor(1,1);
+         LCD_Write_String("lecture");
+         LCD_Set_Cursor(2,1);
+         LCD_Write_String("4");
+         __delay_ms(10000);
+        }else if (class==3)
+        {
+            LCD_Init();
+         LCD_Clear();
+         LCD_Set_Cursor(1,1);
+         LCD_Write_String("lecture");
+         LCD_Set_Cursor(2,1);
+         LCD_Write_String("5");
+         __delay_ms(10000);
+        }else if (class==4)
+        {
+            LCD_Init();
+         LCD_Clear();
+         LCD_Set_Cursor(1,1);
+         LCD_Write_String("lecture");
+         LCD_Set_Cursor(2,1);
+         LCD_Write_String("6");
+         __delay_ms(10000);
+        }else if (class==5)
+        {
+            LCD_Init();
+         LCD_Clear();
+         LCD_Set_Cursor(1,1);
+         LCD_Write_String("lecture");
+         LCD_Set_Cursor(2,1);
+         LCD_Write_String("6");
+         __delay_ms(10000);
+        }else if (class==6)
+        {
+            LCD_Init();
+         LCD_Clear();
+         LCD_Set_Cursor(1,1);
+         LCD_Write_String("lecture");
+         LCD_Set_Cursor(2,1);
+         LCD_Write_String("7");
+         __delay_ms(10000);
+        }
+    }
+    return;
+}
+// Write The ISR Handler
+void __interrupt() ISR (void)
+{
+    if(TMR1IF)
+    {
+        c++;
+     
+        if(c==200)
+        {
+            class++;
+            RB0=1;
+            c=0;
+            __delay_ms(500);
+            RB0=0;
+        }
+        
+        TMR1=15536;
+       
+        if (class == 7 )
+        {
+            TMR1IE=0;
+            PEIE=0;
+            GIE=0;
+            RB1=1;
+            LCD_Init();
+            LCD_Clear();
+            LCD_Set_Cursor(1,1);
+            LCD_Write_String("GOOD BYE ");
+            LCD_Set_Cursor(2,1);
+            LCD_Write_String("Students");
+            __delay_ms(2000);  
+            RB1=0;
+            
+            LCD_Clear();
+            LCD_Init();
+            c=7;
+        }
+        
+        TMR1IF=0;
+        
+    }
+}
+void LCD_DATA(unsigned char Data)
+{
+  if(Data & 1)
+    D4 = 1;
+  else
+    D4 = 0;
+  if(Data & 2)
+    D5 = 1;
+  else
+    D5 = 0;
+  if(Data & 4)
+    D6 = 1;
+  else
+    D6 = 0;
+  if(Data & 8)
+    D7 = 1;
+  else
+    D7 = 0;
+}
+void LCD_CMD(unsigned char CMD)
+{
+  // Select Command Register
+  RS = 0;
+  // Move The Command Data To LCD
+  LCD_DATA(CMD);
+  // Send The EN Clock Signal
+  EN = 1;
+  __delay_us(LCD_EN_Delay);
+  EN = 0;
+}
+void LCD_Clear()
+{
+  LCD_CMD(0);
+  LCD_CMD(1);
+}
+void LCD_Set_Cursor(unsigned char r, unsigned char c)
+{
+  unsigned char Temp,Low4,High4;
+  if(r == 1)
+  {
+    Temp = 0x80 + c - 1; //0x80 is used to move the cursor
+    High4 = Temp >> 4;
+    Low4 = Temp & 0x0F;
+    LCD_CMD(High4);
+    LCD_CMD(Low4);
+  }
+  if(r == 2)
+  {
+    Temp = 0xC0 + c - 1;
+    High4 = Temp >> 4;
+    Low4 = Temp & 0x0F;
+    LCD_CMD(High4);
+    LCD_CMD(Low4);
+  }
+}
+void LCD_Init()
+{
+  // IO Pin Configurations
+  LCD_DATA_PORT_D = 0x00;
+  LCD_RS_D = 0;
+  LCD_EN_D = 0;
+  // The Init. Procedure As Described In The Datasheet
+  LCD_DATA(0x00);
+  __delay_ms(30);
+  __delay_us(LCD_EN_Delay);
+  LCD_CMD(0x03);
+  __delay_ms(5);
+  LCD_CMD(0x03);
+  __delay_us(150);
+  LCD_CMD(0x03);
+  LCD_CMD(0x02);
+  LCD_CMD(0x02);
+  LCD_CMD(0x08);
+  LCD_CMD(0x00);
+  LCD_CMD(0x0C);
+  LCD_CMD(0x00);
+  LCD_CMD(0x06);
+}
+void LCD_Write_Char(char Data)
+{
+  char Low4,High4;
+  Low4 = Data & 0x0F;
+  High4 = Data & 0xF0;
+  RS = 1;
+  LCD_DATA(High4>>4);
+  EN = 1;
+  __delay_us(LCD_EN_Delay);
+  EN = 0;
+  __delay_us(LCD_EN_Delay);
+  LCD_DATA(Low4);
+  EN = 1;
+  __delay_us(LCD_EN_Delay);
+  EN = 0;
+  __delay_us(LCD_EN_Delay);
+}
+void LCD_Write_String(char *str)
+{
+  int i;
+  for(i=0;str[i]!='\0';i++)
+    LCD_Write_Char(str[i]);
+}
+void LCD_SL()
+{
+  LCD_CMD(0x01);
+  LCD_CMD(0x08);
+}
+void LCD_SR()
+{
+  LCD_CMD(0x01);
+  LCD_CMD(0x0C);
+}
